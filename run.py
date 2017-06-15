@@ -17,7 +17,8 @@ class MyCanvas:
         self._second_click = True
         self._rect_coords = []
         self._rect = None
-        self._all_items = Queue()  # all rectangles drawn on the canvas
+        self._all_rectangles = Queue()  # all rectangles drawn on the canvas
+        self._guide_lines = []  # lines displayed on first coordinate selection for rect
 
         self.area_data = {}  # dict of str as keys (category) mapping to list of tuple of int (rectangle coords)
         self._current_category = categories[0]
@@ -48,23 +49,38 @@ class MyCanvas:
             self._second_click = not self._second_click
             if not self._second_click:
                 self._rect_coords = [event.x, event.y]
+                self._window.create_line(event.x, 0, event.x, self.window_size[1],
+                                         fill="red", dash=(4, 4), tag="guide_line")
+                self._window.create_line(0, event.y, self.window_size[0], event.y,
+                                         fill="red", dash=(4, 4), tag="guide_line")
             else:
+                # delete guide lines
+                self._window.delete("guide_line")
+                # create rectangle
                 self._rect_coords.append(event.x)
                 self._rect_coords.append(event.y)
                 self._rect = self._window.create_rectangle(self._rect_coords[0],
                                                            self._rect_coords[1],
                                                            self._rect_coords[2],
                                                            self._rect_coords[3],)
-                self._all_items.put(self._rect)
+                self._all_rectangles.put(self._rect)
                 # scale coordinates to represent the same area of the original image (before it was scaled)
                 self._add_to_area_data(list(map(lambda x: round(x * (1 / self._scale_ratio)),
                                                 self._clamp_coords(self._rect_coords))))
+
+        def remove_prev_rect(event):
+            """ Rm rect from queue, del drawing on canvas, rm from area_data dict """
+            if not self._all_rectangles.empty():
+                self._window.delete(self._all_rectangles.get())  # pop newest entry & delete from canvas
+            if self._current_category in self.area_data and len(self.area_data[self._current_category]) > 0:
+                del self.area_data[self._current_category][-1]
 
         def save_and_exit():
             self._serialize_as_json()
             master.destroy()
 
-        master.bind("<Button-1>", on_mouse_click)
+        master.bind("<Button-1>", on_mouse_click)  # left mouse btn
+        master.bind("<Button-3>", remove_prev_rect)  # right mouse btn
         master.protocol("WM_DELETE_WINDOW", save_and_exit)
         mainloop()
 
@@ -90,13 +106,6 @@ class MyCanvas:
         for i in range(1, 4, 2):
             coords[i] = max(0, min(coords[i], self.scaled_img_size[1]))
         return coords
-
-    def _remove_prev_rect(self):
-        """ Rm rect from queue, del drawing on canvas, rm from area_data dict """
-        if not self._all_items.empty():
-            self._window.delete(self._all_items.get())  # pop newest entry & delete from canvas
-        if len(self.area_data[self._current_category]) > 0:
-            del self.area_data[self._current_category][-1]
 
     def _add_to_area_data(self, coordinates):
         if self._current_category not in self.area_data:
