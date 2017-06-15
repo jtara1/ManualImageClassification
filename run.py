@@ -1,7 +1,7 @@
 import os
 from tkinter import *
 from PIL import Image, ImageTk
-from queue import Queue
+from queue import LifoQueue
 import json
 
 
@@ -17,8 +17,7 @@ class MyCanvas:
         self._second_click = True
         self._rect_coords = []
         self._rect = None
-        self._all_rectangles = Queue()  # all rectangles drawn on the canvas
-        self._guide_lines = []  # lines displayed on first coordinate selection for rect
+        self._all_rectangles = LifoQueue()  # all rectangles drawn on the canvas
 
         self.area_data = {}  # dict of str as keys (category) mapping to list of tuple of int (rectangle coords)
         self._current_category = categories[0]
@@ -81,6 +80,7 @@ class MyCanvas:
 
         master.bind("<Button-1>", on_mouse_click)  # left mouse btn
         master.bind("<Button-3>", remove_prev_rect)  # right mouse btn
+        self._assign_each_category_to_hotkey()
         master.protocol("WM_DELETE_WINDOW", save_and_exit)
         mainloop()
 
@@ -112,6 +112,17 @@ class MyCanvas:
             self.area_data[self._current_category] = [coordinates]
         else:
             self.area_data[self._current_category].append(coordinates)
+
+    def _assign_each_category_to_hotkey(self):
+        if len(self.categories) > 9:
+            raise ValueError("Does not support more than 9 categories for automatic hotkey mapping")
+
+        for i in range(len(self.categories)):
+            self._window.bind(str(i+1), lambda e, c=self.categories[i]: self._change_category(c))
+
+    def _change_category(self, category):
+        print(category)
+        self._current_category = category
 
     def _serialize_as_json(self, overwrite_prev_entry=True):
         if not overwrite_prev_entry:
