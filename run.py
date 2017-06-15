@@ -19,7 +19,10 @@ class MyCanvas:
         self._rect = None
         self._all_rectangles = LifoQueue()  # all rectangles drawn on the canvas
 
-        self.area_data = {}  # dict of str as keys (category) mapping to list of tuple of int (rectangle coords)
+        # dict of str as keys (image_path) mapping to dict of str as keys (category name)
+        # mapping to a list of lists of ints (each list is a rect coordinates)
+        self.area_data = {}
+
         self._current_category = categories[0]
         self.categories = categories
 
@@ -31,6 +34,10 @@ class MyCanvas:
     def _main(self):
         master = Tk()
         self._window = Canvas(master, width=self.window_size[0], height=self.window_size[1])
+        menubar = Menu(master)
+        menubar.add_command(label="Hello!", command=lambda e: print('hi'))
+        filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label="Open", command=lambda e: print('hi'))
 
         # load image and draw on canvas
         image = Image.open(self._image_file_path)
@@ -73,6 +80,9 @@ class MyCanvas:
                 self._window.delete(self._all_rectangles.get())  # pop newest entry & delete from canvas
             if self._current_category in self.area_data and len(self.area_data[self._current_category]) > 0:
                 del self.area_data[self._current_category][-1]
+            # rm guide lines in case user was on first click cycle
+            self._second_click = True
+            self._window.delete("guide_line")
 
         def save_and_exit():
             self._serialize_as_json()
