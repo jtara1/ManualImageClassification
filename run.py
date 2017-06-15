@@ -11,7 +11,9 @@ class MyCanvas:
                  categories,
                  output_file_path=os.path.join(os.getcwd(), "img_classifications.json")):
         self.window_size = [1280, 720]
+        self.scaled_img_size = self.window_size
         self._window = None  # Tkinter window
+        self._scale_ratio = 1  # Multiplier to scale the image to fit the Tk window
         self._second_click = True
         self._rect_coords = []
         self._rect = None
@@ -32,7 +34,8 @@ class MyCanvas:
 
         # load image and draw on canvas
         image = Image.open(self._image_file_path)
-        image.thumbnail(self._fit_img(self.window_size[0], self.window_size[1]))
+        self.scaled_img_size = self._fit_img(image.size[0], image.size[1])
+        image.thumbnail(size=self.scaled_img_size)
         print("rescaled img to: {}".format(image.size))
         photo = ImageTk.PhotoImage(image=image)
 
@@ -53,7 +56,9 @@ class MyCanvas:
                                                            self._rect_coords[2],
                                                            self._rect_coords[3],)
                 self._all_items.put(self._rect)
-                self._add_to_area_data(tuple(self._rect_coords))
+                # scale coordinates to represent the same area of the original image (before it was scaled)
+                self._add_to_area_data(list(map(lambda x: round(x * (1 / self._scale_ratio)),
+                                                self._clamp_coords(self._rect_coords))))
 
         def save_and_exit():
             self._serialize_as_json()
@@ -70,13 +75,21 @@ class MyCanvas:
         # assumes wind. width > wind. height (most aspect ratios work that way)
         if w > h:
             w2 = self.window_size[0]
-            ratio = float(w2)/w
-            h2 = ratio * h
+            self._scale_ratio = float(w2)/w
+            h2 = self._scale_ratio * h
         elif h >= w:
             h2 = self.window_size[1]
-            ratio = float(h2)/h
-            w2 = ratio * w
+            self._scale_ratio = float(h2)/h
+            w2 = self._scale_ratio * w
         return w2, h2
+
+    def _clamp_coords(self, coords):
+        """ Keep the coordinates [x1, y1, x2, y2] within the boundaries of the scaled image """
+        for i in range(0, 4, 2):
+            coords[i] = max(0, min(coords[i], self.scaled_img_size[0]))
+        for i in range(1, 4, 2):
+            coords[i] = max(0, min(coords[i], self.scaled_img_size[1]))
+        return coords
 
     def _remove_prev_rect(self):
         """ Rm rect from queue, del drawing on canvas, rm from area_data dict """
@@ -98,7 +111,10 @@ class MyCanvas:
         if not os.path.isfile(self._output_file_path):
             data = {}
         else:
-            data = json.load(open(self._output_file_path, 'r'))
+            try:
+                data = json.load(open(self._output_file_path, 'r'))
+            except json.decoder.JSONDecodeError:  # in case an empty file was found or json was mal-formatted
+                data = {}
         data[self._image_file_path] = self.area_data
         json.dump(fp=open(self._output_file_path, 'w'), obj=data)
 
