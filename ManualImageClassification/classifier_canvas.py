@@ -30,8 +30,10 @@ class ClassifierCanvas:
         self._image_file_path = os.path.abspath(directory_of_images)
         self._output_file_path = output_file_path
 
-        glob_dir = os.path.join(directory_of_images, "*.jpg")
+        glob_dir = os.path.join(directory_of_images, "*")  # match every file in the folder
         for img_path in glob(glob_dir):
+            if not os.path.isfile(img_path):
+                continue
             self._image_file_path = img_path
             self._main()
 
@@ -73,7 +75,7 @@ class ClassifierCanvas:
                 self._all_rectangles.put(self._rect)
                 # scale coordinates to represent the same area of the original image (before it was scaled)
                 self._add_to_area_data(list(map(lambda x: round(x * (1 / self._scale_ratio)),
-                                                self._clamp_coords(self._rect_coords))))
+                                                self._clamp_coords_and_sort(self._rect_coords))))
 
         def remove_prev_rect(event):
             """ Rm rect from queue, del drawing on canvas, rm from area_data dict """
@@ -118,12 +120,17 @@ class ClassifierCanvas:
             w2 = self._scale_ratio * w
         return w2, h2
 
-    def _clamp_coords(self, coords):
+    def _clamp_coords_and_sort(self, coords):
         """ Keep the coordinates [x1, y1, x2, y2] within the boundaries of the scaled image """
         for i in range(0, 4, 2):
             coords[i] = max(0, min(coords[i], self.scaled_img_size[0]))
         for i in range(1, 4, 2):
             coords[i] = max(0, min(coords[i], self.scaled_img_size[1]))
+        if coords[0] > coords[2]:
+            coords[0], coords[2] = coords[2], coords[0]  # swap
+        if coords[1] > coords[3]:
+            coords[1], coords[3] = coords[3], coords[1]  # swap
+
         return coords
 
     def _add_to_area_data(self, coordinates):
