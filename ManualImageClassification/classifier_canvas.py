@@ -1,5 +1,6 @@
 import os
 from tkinter import *
+import PIL
 from PIL import Image, ImageTk
 from queue import LifoQueue
 import json

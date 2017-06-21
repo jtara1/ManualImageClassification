@@ -7,6 +7,8 @@ Tested on Linux using Python 3.5
 
 ### Install 
 
+- If using `apt` package manager,
+    - `sudo apt install python3-tk python3-pil.imagetk`
 - clone this repo
 - `pip3 install -r requirements.txt`
 
