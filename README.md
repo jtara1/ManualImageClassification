@@ -27,3 +27,76 @@ Run with `python3 run.py`
 | Escape | Save and continue to next image |
 
 You may also close the window at any point to save and exit.
+
+---
+
+### Example
+
+![eg](https://gfycat.com/VictoriousIncomparableAfricanjacana)
+
+output in `img_classifications.json`
+
+```bazaar
+{
+  "/home/j/_Github-Projects/ManualImageClassification/example/pictures/iron ore2.png": {
+    "tree": [
+      [
+        736,
+        173,
+        833,
+        239
+      ],
+      [
+        1900,
+        54,
+        1996,
+        116
+      ],
+      [
+        2436,
+        951,
+        2530,
+        1011
+      ]
+    ]
+  },
+  "/home/j/_Github-Projects/ManualImageClassification/example/pictures/iron ore3.png": {
+    "tree": [
+      [
+        857,
+        1158,
+        973,
+        1212
+      ],
+      [
+        1872,
+        815,
+        1970,
+        863
+      ],
+      [
+        2026,
+        1039,
+        2127,
+        1095
+      ]
+    ]
+  },
+  "/home/j/_Github-Projects/ManualImageClassification/example/pictures/iron ore1.png": {
+    "tree": [
+      [
+        1473,
+        680,
+        1573,
+        742
+      ],
+      [
+        1553,
+        949,
+        1669,
+        995
+      ]
+    ]
+  }
+}
+```
